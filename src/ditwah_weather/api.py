@@ -12,7 +12,21 @@ DAILY_VARIABLES = [
 ]
 
 def get_daily_weather(latitude, longitude, start_date, end_date):
-    """Download daily historical weather data from Open-Meteo with rate limit handling."""
+    """
+    Download daily historical weather data from Open-Meteo with rate limit handling.
+    
+    Args:
+        latitude (float): Location latitude.
+        longitude (float): Location longitude.
+        start_date (str): Start date in YYYY-MM-DD format.
+        end_date (str): End date in YYYY-MM-DD format.
+        
+    Returns:
+        pd.DataFrame: A dataframe containing daily weather data.
+        
+    Raises:
+        Exception: If the rate limit is exceeded 5 times.
+    """
 
     params = {
         "latitude": latitude,

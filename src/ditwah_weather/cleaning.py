@@ -1,7 +1,19 @@
 import pandas as pd
 
 def clean_weather_data(df, location_name):
-    """Clean and validate one location's weather DataFrame."""
+    """
+    Clean and validate one location's weather DataFrame.
+    
+    Args:
+        df (pd.DataFrame): Raw weather data from the API.
+        location_name (str): Name of the city (used for the location column).
+        
+    Returns:
+        pd.DataFrame: Cleaned data with proper dates and bounded rainfall.
+        
+    Raises:
+        ValueError: If required columns are missing from the Open-Meteo response.
+    """
 
     required = {
         "date",
