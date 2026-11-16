@@ -39,12 +39,16 @@ st.sidebar.title("🌧️ Cyclone Ditwah")
 st.sidebar.markdown("Explore the historical climate context of Sri Lanka's extreme weather.")
 
 # The city toggle now controls the data globally for Page 1 and Page 2
-cities = df['city'].unique().tolist()
+raw_cities = df['city'].unique().tolist()
+cities = [c.replace("_", " ").title() for c in raw_cities]
+
 default_idx = cities.index("Dankotuwa") if "Dankotuwa" in cities else 0
 selected_city = st.sidebar.selectbox("📍 Select a Grid Point", cities, index=default_idx)
 
-# Pre-filter the data for the selected city
-city_df = df[df['city'] == selected_city].copy()
+# Pre-filter the data for the selected city (convert back to dataset format)
+db_city = selected_city.replace(" ", "_").capitalize()
+if db_city == "Nuwara_eliya": db_city = "Nuwara_eliya" # Specific case handler
+city_df = df[df['city'] == db_city].copy()
 
 
 # ==========================================
@@ -53,6 +57,7 @@ city_df = df[df['city'] == selected_city].copy()
 def page_overview():
     st.title("Sri Lanka: Climate Context & Warming Trends")
     
+    # --- SECTION 1: Intro & Map ---
     col1, col2 = st.columns([1.2, 1])
     with col1:
         st.subheader("Why these cities?")
@@ -78,6 +83,7 @@ def page_overview():
 
     st.divider()
     
+    # --- SECTION 2: Your Original Bar Chart (Linked to Sidebar) ---
     st.subheader(f"The Shifting Baseline Climate: {selected_city}")
     st.info("**Main Finding:** All 10 analyzed grid points exhibit a highly statistically significant warming trend over the past 85 years.", icon="📈")
     
@@ -92,7 +98,83 @@ def page_overview():
                                   mode='lines', name='10-Year Trend', line=dict(color='black', width=3)))
     fig_temp.update_layout(template='plotly_white', coloraxis_showscale=False)
     st.plotly_chart(fig_temp, use_container_width=True)
+    
+    st.divider()
 
+    # --- SECTION 3: The Interactive Heatmap Comparison Tool ---
+    st.subheader("Warming Trend: Deep Dive City Comparison")
+    st.markdown("Compare the monthly temperature anomalies between two cities. Use the slider to zoom in on a specific decade.")
+    
+    # FIX: Extract the year from the date column first!
+    df['date'] = pd.to_datetime(df['date'])
+    df['year'] = df['date'].dt.year
+    
+    # 1. Add the Year Range Slider
+    min_year = int(df['year'].min())
+    max_year = int(df['year'].max())
+    
+    # The slider returns a tuple (start_year, end_year)
+    selected_years = st.slider(
+        "Select Year Range:",
+        min_value=min_year,
+        max_value=max_year,
+        value=(1990, max_year), # Default to showing the last ~35 years to start
+        step=1
+    )
+    
+    # Side-by-side dropdowns for comparison
+    col_sel1, col_sel2 = st.columns(2)
+    compare_city_1 = col_sel1.selectbox("Select First City", cities, index=cities.index("Nuwara_eliya") if "Nuwara_eliya" in cities else 0)
+    compare_city_2 = col_sel2.selectbox("Select Second City", cities, index=cities.index("Trincomalee") if "Trincomalee" in cities else 1)
+    
+# Function to generate a monthly heatmap for a given city and year range
+    def create_heatmap(city_name, year_range):
+        # 1. Get the FULL data for the city first
+        c_df = df[df['city'] == city_name].copy()
+        c_df['date'] = pd.to_datetime(c_df['date'])
+        
+        # 2. Calculate anomalies using the FULL dataset so the 1961-1990 baseline exists
+        anom_df = add_anomalies(c_df, base=(1961, 1990), var='temperature_2m_max')
+        anom_df['month'] = anom_df['date'].dt.month
+        
+        # 3. NOW filter by the user's selected year range!
+        anom_df = anom_df[(anom_df['year'] >= year_range[0]) & (anom_df['year'] <= year_range[1])]
+        
+        # Group by year and month to get the average monthly anomaly
+        monthly_anom = anom_df.groupby(['year', 'month'])['anomaly'].mean().reset_index()
+        
+        # Pivot the data for the heatmap (Rows: Month, Columns: Year)
+        pivot_df = monthly_anom.pivot(index='month', columns='year', values='anomaly')
+        month_names = {1:'Jan', 2:'Feb', 3:'Mar', 4:'Apr', 5:'May', 6:'Jun', 7:'Jul', 8:'Aug', 9:'Sep', 10:'Oct', 11:'Nov', 12:'Dec'}
+        pivot_df.index = pivot_df.index.map(month_names)
+        
+        # Determine a strict color scale limit so both charts share the exact same scale
+        max_val = max(abs(pivot_df.min().min()), abs(pivot_df.max().max()))
+        if pd.isna(max_val): max_val = 2.0 # Fallback
+        
+        # Create Plotly Heatmap
+        fig = px.imshow(pivot_df,
+                        labels=dict(x="Year", y="Month", color="Anomaly (°C)"),
+                        x=pivot_df.columns,
+                        y=pivot_df.index,
+                        color_continuous_scale='RdBu_r',
+                        zmin=-max_val, 
+                        zmax=max_val,  
+                        aspect='auto')
+                        
+        # Move the X-axis (Years) to the top so it doesn't overlap tooltips
+        fig.update_xaxes(side="top")
+        fig.update_layout(template='plotly_white', margin=dict(t=50, b=20))
+        return fig
+
+    # Display the heatmaps side by side
+    col_chart1, col_chart2 = st.columns(2)
+    with col_chart1:
+        st.markdown(f"**{compare_city_1}**")
+        st.plotly_chart(create_heatmap(compare_city_1, selected_years), use_container_width=True, key="heatmap_1")
+    with col_chart2:
+        st.markdown(f"**{compare_city_2}**")
+        st.plotly_chart(create_heatmap(compare_city_2, selected_years), use_container_width=True, key="heatmap_2")
 
 # ==========================================
 # PAGE 2: Rainfall Extremes
