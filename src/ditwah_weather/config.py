@@ -1,3 +1,5 @@
+"""Project configuration constants and Sri Lankan grid locations."""
+
 from dataclasses import dataclass
 
 EVENT_START = "2025-11-26"

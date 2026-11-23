@@ -1,10 +1,8 @@
 """Download daily weather data for configured locations."""
 
 import sys
-import os
 import time
 from pathlib import Path
-import pandas as pd
 
 # Locate the project root and the src directory.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent

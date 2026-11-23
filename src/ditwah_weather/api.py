@@ -57,4 +57,4 @@ def get_daily_weather(latitude, longitude, start_date, end_date):
 
         return df
         
-    raise Exception("API rate limit exceeded too many times. Please wait 5 minutes and try again.")
+    raise RuntimeError("API rate limit exceeded too many times. Please wait 5 minutes and try again.")

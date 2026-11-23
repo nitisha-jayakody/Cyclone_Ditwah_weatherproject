@@ -10,6 +10,7 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+# pylint: disable=wrong-import-position
 from ditwah_weather.config import LOCATIONS
 from ditwah_weather.analysis import calculate_event_rainfall, calculate_historical_percentile
 
