@@ -69,6 +69,21 @@ pip install -r requirements.txt
 ```bash
 python scripts/download_weather_data.py
 ```
+
+> **Note on API rate limits:** Fetching 85+ years of daily records across 10 locations can trigger HTTP `429` rate limits on Open-Meteo. `scripts/download_weather_data.py` pauses between requests and skips any city CSV already present in `data/`, while `src/ditwah_weather/api.py` retries on `429` responses:
+>
+> ```python
+> for attempt in range(5):
+>     response = requests.get(BASE_URL, params=params, timeout=60)
+>     if response.status_code == 429:
+>         print(f"  [API Limit] Server says too fast. Waiting 15 seconds (Attempt {attempt + 1}/5)...")
+>         time.sleep(15)
+>         continue
+>     response.raise_for_status()
+> ```
+>
+> If the API temporarily blocks your connection for a few minutes, wait briefly and re-run `python scripts/download_weather_data.py` to resume from the remaining cities.
+
 ## Run
 
 ### Streamlit web app
@@ -113,6 +128,7 @@ dankotuwa_df = df[df["city"] == "Dankotuwa"]
 rain = calculate_event_rainfall(dankotuwa_df, start="2025-11-26", end="2025-11-30")
 print(f"Total Rainfall: {rain:.1f} mm")
 ```
+
 ## Project structure
 
 ```text
