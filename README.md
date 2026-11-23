@@ -52,7 +52,7 @@ Exact versions are pinned in `requirements.txt`.
 1. Clone the repository and enter the folder:
 
 ```bash
-git clone [https://github.com/nitisha-jayakody/Cyclone_Ditwah_weatherproject.git](https://github.com/nitisha-jayakody/Cyclone_Ditwah_weatherproject.git)
+git clone https://github.com/nitisha-jayakody/Cyclone_Ditwah_weatherproject.git
 cd Cyclone_Ditwah_weatherproject
 ```
 
